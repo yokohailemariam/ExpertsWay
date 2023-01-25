@@ -14,8 +14,9 @@ import 'package:flutter/services.dart';
 import 'package:learncoding/ui/widgets/course_card.dart';
 import 'package:learncoding/utils/color.dart';
 import 'package:learncoding/utils/constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../db/course_database.dart';
-import '../../api/shared_preference/shared_preference.dart';
+import 'package:learncoding/api/shared_preference/shared_preference.dart';
 
 String? name;
 String? image;
@@ -53,6 +54,7 @@ class _TopBarState extends State<TopBar> {
   void initState() {
     refreshCourse();
     super.initState();
+    getValue();
   }
 
   Future refreshCourse() async {
@@ -70,11 +72,11 @@ class _TopBarState extends State<TopBar> {
     setState(() => isLoading = false);
   }
 
-  @override
-  void initState() {
-    super.initState();
-    getValue();
-  }
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   getValue();
+  // }
 
   getValue() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -227,8 +229,9 @@ class _TopBarState extends State<TopBar> {
                                   ),
                                 );
                               }
+                              );
                             }
-                            if (snapshot.data!.courses.isEmpty) {
+                            else if (snapshot.data!.courses.isEmpty) {
                               return const Center(
                                   child: Text(
                                 "There is no Course",
@@ -260,9 +263,10 @@ class _TopBarState extends State<TopBar> {
                               refreshCourse();
                             });
                             return Container();
-                          })
+                          }
+                          )
                       : buildCard())
-              : Container(),
+              : Container()),
         ],
       ),
     );
