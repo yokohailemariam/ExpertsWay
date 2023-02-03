@@ -1,3 +1,4 @@
+import 'package:learncoding/db/course_database.dart';
 import 'package:learncoding/models/course.dart';
 import 'package:learncoding/models/lesson.dart' as lesson;
 import 'package:learncoding/ui/pages/lesson.dart';
@@ -8,6 +9,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:learncoding/theme/config.dart' as config;
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+
+import '../../models/lesson.dart';
+import '../../utils/color.dart';
 
 class CourseDetailPage extends StatefulWidget {
   final CourseElement courseData;
@@ -21,15 +25,22 @@ class CourseDetailPage extends StatefulWidget {
 }
 
 class _CoursePagePageState extends State<CourseDetailPage> {
+   late List<LessonElement> lessonData = [];
+  late List<LessonContent> lessoncontent = [];
+  bool isLoading = false;
+  
   late YoutubePlayerController _controller;
   late PlayerState _playerState;
   late YoutubeMetaData _videoMetaData;
   bool _muted = false;
   bool _isPlayerReady = false;
 
+
   @override
   void initState() {
     super.initState();
+    
+    refreshLesson();
     String url = widget.courseData.shortVideo;
     _controller = YoutubePlayerController(
       initialVideoId: YoutubePlayer.convertUrlToId(url)!,
@@ -39,7 +50,18 @@ class _CoursePagePageState extends State<CourseDetailPage> {
       ),
     )..addListener(listener);
   }
+Future refreshLesson() async {
+    setState(() => isLoading = true);
 
+    lessonData =
+        await CourseDatabase.instance.readLesson(widget.courseData.slug);
+    lessoncontent = await CourseDatabase.instance.readAllLessonContent();
+
+    print("....lesson length ...." + lessonData.length.toString());
+    print("\n....content length ...." + lessoncontent.length.toString());
+    setState(() => isLoading = false);
+  }
+  
   void listener() {
     if (_isPlayerReady && mounted && !_controller.value.isFullScreen) {
       setState(() {
@@ -252,6 +274,7 @@ class _CoursePagePageState extends State<CourseDetailPage> {
                                   CupertinoPageRoute(
                                     builder: (context) => LessonPage(
                                         lessonData: lessonData,
+                                        contents: lessoncontent,
                                         section: section.toString(),
                                         lesson: lessonTitle[index].toString()),
                                   ),
@@ -392,7 +415,58 @@ class _CoursePagePageState extends State<CourseDetailPage> {
                             ],
                           ),
                         ),
-                        buildlesson(),
+                       lessonData.isEmpty
+                        ? FutureBuilder<Lesson>(
+                            future: ApiProvider()
+                                .retrieveLessons(widget.courseData.slug),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                {
+                                  return Center(
+                                    child: CircularProgressIndicator(
+                                      color: maincolor,
+                                    ),
+                                  );
+                                }
+                              }
+                              if (!snapshot.hasData) {
+                                return const Center(
+                                    child: Text(
+                                  "There is no Course",
+                                  style: TextStyle(
+                                      color:
+                                          Color.fromARGB(184, 138, 138, 138)),
+                                ));
+                              }
+                              if (snapshot.hasError) {
+                                return const Center(
+                                    child: Text(
+                                  "Unabel to get the data",
+                                  style: TextStyle(
+                                      color:
+                                          Color.fromARGB(184, 138, 138, 138)),
+                                ));
+                              }
+                              if (snapshot.hasData) {
+                                for (var i = 0;
+                                    i < snapshot.data!.lessons.length;
+                                    i++) {
+                                  final lessonData = snapshot.data!.lessons[i];
+                                  CourseDatabase.instance.createLessons(
+                                      lessonData!,
+                                      widget.courseData.course_id!);
+                                }
+
+                                WidgetsBinding.instance
+                                    .addPostFrameCallback((_) {
+                                  refreshLesson();
+                                });
+                              }
+
+                              return Container();
+                            })
+                        : buildLessonCard(),
                       ],
                     ),
                     Positioned(
@@ -466,5 +540,29 @@ class _CoursePagePageState extends State<CourseDetailPage> {
         ],
       ),
     );
+  }
+  Widget buildLessonCard() {
+    List sections = sectionList(lessonData);
+
+    return ListView.builder(
+        shrinkWrap: true,
+        padding: EdgeInsets.all(0),
+        itemCount: sections.length,
+        itemBuilder: (context, index) {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              buildLessonList(lessonData, sections[index]),
+              index < sections.length
+                  ? const Divider(
+                      color: Color.fromARGB(255, 215, 214, 214),
+                      thickness: 1,
+                      height: 1,
+                    )
+                  : Container()
+            ],
+          );
+        });
   }
 }

@@ -4,9 +4,6 @@ import 'dart:convert';
 
 // String courseToJson(Course data) => json.encode(data.toJson());
 
-final String tableCourses = 'courses';
-final String courseElement = 'coursesElement';
-final String tablesections = 'sections';
 
 class CourseFields {
   static final List<dynamic> values = [
@@ -49,106 +46,104 @@ class Course {
 class CourseElementFields {
   static final List<String> values = [
     // add all fileds
-    id, name, slug, description, color, icon, sections, shortVideo,
-    lastUpdated, prerequests, eneabled
+    course_id, name, slug, description, color, icon, shortVideo,
+    lastUpdated, eneabled
   ];
 
-  static final String id = '_id';
+  static final String course_id = '_id';
   static final String name = 'name';
   static final String slug = 'slug';
   static final String description = 'description';
   static final String color = 'color';
   static final String icon = 'icon';
-  static final String sections = 'sections';
   static final String shortVideo = 'short_video';
   static final String lastUpdated = 'last_updated';
-  static final String prerequests = 'prerequests';
   static final String eneabled = 'enabled';
+  static final String isLastSeen = 'is_last_seen';
+  static final String seenCounter = 'seen_counter';
 }
 
 class CourseElement {
   CourseElement({
-    this.id,
+    this.course_id,
     required this.name,
     required this.slug,
     required this.description,
     required this.color,
     required this.icon,
-    this.sections,
+    
     required this.shortVideo,
     required this.lastUpdated,
-    this.prerequests,
     required this.enabled,
+     this.seenCounter,
+     this.isLastSeen,
   });
 
   CourseElement copy({
-    int? id,
+    int? course_id,
     String? name,
     String? slug,
     String? description,
     String? color,
     String? icon,
-    List<Section>? sections,
     String? shortVideo,
     DateTime? lastUpdated,
-    String? prerequests,
     bool? enabled,
+    int? isLastSeen,
+    int? seenCounter,
   }) =>
       CourseElement(
-        id: id ?? this.id,
+        course_id: course_id ?? this.course_id,
         name: name ?? this.name,
         slug: slug ?? this.slug,
         description: description ?? this.description,
         color: color ?? this.color,
         icon: icon ?? this.icon,
-        sections: sections ?? this.sections,
         shortVideo: shortVideo ?? this.shortVideo,
         lastUpdated: lastUpdated ?? this.lastUpdated,
-        prerequests: prerequests ?? this.prerequests,
         enabled: enabled ?? this.enabled,
+        isLastSeen: isLastSeen ?? this.isLastSeen,
+        seenCounter: seenCounter ?? this.seenCounter,
       );
 
-  final int? id;
+  final int? course_id;
   String name;
   String slug;
   String description;
   String color;
   String icon;
-  List<Section>? sections;
   String shortVideo;
   DateTime lastUpdated;
-  String? prerequests;
   bool enabled;
+  int? seenCounter;
+  int? isLastSeen;
 
   factory CourseElement.fromJson(Map<String, dynamic> json) => CourseElement(
-        id: json[CourseElementFields.id] as int?,
+        course_id: json[CourseElementFields.course_id] as int?,
         name: json[CourseElementFields.name] as String,
         slug: json[CourseElementFields.slug] as String,
         description: json[CourseElementFields.description] as String,
         color: json[CourseElementFields.color] as String,
         icon: json[CourseElementFields.icon] as String,
-        sections: List<Section>.from(
-            json[CourseElementFields.sections].map((x) => Section.fromJson(x))),
         shortVideo: json[CourseElementFields.shortVideo] as String,
         lastUpdated: DateTime.parse(json[CourseElementFields.lastUpdated]),
-        prerequests: json[CourseElementFields.prerequests] as String,
         enabled: json[CourseElementFields.eneabled] == 1,
+        isLastSeen: json[CourseElementFields.isLastSeen] as int?,
+        seenCounter: json[CourseElementFields.seenCounter] as int?,
       );
 
   Map<String, Object?> toJson() => {
-        CourseElementFields.id: id,
+        CourseElementFields.course_id: course_id,
         CourseElementFields.name: name,
         CourseElementFields.slug: slug,
         CourseElementFields.description: description,
         CourseElementFields.color: color,
         CourseElementFields.icon: icon,
-        CourseElementFields.sections: sections == null
-            ? List<dynamic>.from(sections!.map((x) => x.toJson())).toList()
-            : [],
         CourseElementFields.shortVideo: shortVideo,
         CourseElementFields.lastUpdated: lastUpdated.toIso8601String(),
-        CourseElementFields.prerequests: prerequests,
         CourseElementFields.eneabled: enabled ? 1 : 0,
+        CourseElementFields.isLastSeen: isLastSeen ,
+        CourseElementFields.seenCounter: seenCounter ,
       };
 }
 
@@ -180,10 +175,11 @@ class Section {
     String? level,
   }) =>
       Section(
-          sec_id: sec_id ?? this.sec_id,
-          course_id: course_id ?? this.course_id,
-          section: section ?? this.section,
-          level: level ?? this.level,);
+        sec_id: sec_id ?? this.sec_id,
+        course_id: course_id ?? this.course_id,
+        section: section ?? this.section,
+        level: level ?? this.level,
+      );
 
   factory Section.fromJson(Map<String, dynamic> json) => Section(
         sec_id: json[SectionFields.sec_id] as String?,
@@ -193,7 +189,7 @@ class Section {
       );
 
   Map<String, dynamic> toJson() => {
-        SectionFields.sec_id: sec_id?? '',
+        SectionFields.sec_id: sec_id ?? '',
         SectionFields.course_id: course_id ?? '',
         SectionFields.sections: section ?? '',
         SectionFields.level: level ?? '',
