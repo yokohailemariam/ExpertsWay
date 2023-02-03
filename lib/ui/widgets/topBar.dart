@@ -4,12 +4,16 @@ import 'package:flutter/services.dart';
 import 'package:learncoding/ui/widgets/course_card.dart';
 import 'package:learncoding/utils/color.dart';
 import 'package:learncoding/utils/constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../db/course_database.dart';
 import '../../models/course.dart';
 import 'package:flutter/material.dart' as material;
 
 import '../../services/api_controller.dart';
 import '../../theme/box_icons_icons.dart';
+
+String? name;
+String? image;
 
 class TopBar extends StatefulWidget {
   const TopBar({
@@ -30,6 +34,7 @@ class _TopBarState extends State<TopBar> {
   late List<CourseElement> course = [];
   late List<Section> section = [];
   bool isLoading = false;
+  
 
   @override
   void dispose() {
@@ -40,21 +45,21 @@ class _TopBarState extends State<TopBar> {
   @override
   void initState() {
     refreshCourse();
+    getValue();
     super.initState();
+  }
+
+  getValue() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    //Return double
+    name = prefs.getString('name');
+    image = prefs.getString('image');
   }
 
   Future refreshCourse() async {
     setState(() => isLoading = true);
 
     course = await CourseDatabase.instance.readAllCourse();
-    // section = await CourseDatabase.instance.readAllSection();
-    print("....note length Course...." +
-        course.length
-            .toString()); // print("....note length Section...." + section.length.toString());
-    // for (var i = 0; i < section.length; i++) {
-    //   print(
-    //       ' section id  ${section[i].sec_id} +    course id  ${section[i].course_id} \nSection  ${section[i].section} Level  ${section[i].level} ');
-    // }
     setState(() => isLoading = false);
   }
 
@@ -79,7 +84,7 @@ class _TopBarState extends State<TopBar> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 15),
                   child: Text(
-                    "Hi, Akshay.",
+                    "Hi," + name!,
                     style: TextStyle(
                         color: Color(0xFF343434),
                         fontSize: 24,
@@ -91,7 +96,7 @@ class _TopBarState extends State<TopBar> {
                   padding: const EdgeInsets.symmetric(horizontal: 15),
                   child: GestureDetector(
                     child: material.CircleAvatar(
-                      backgroundImage: AssetImage('assets/images/user.jpg'),
+                      backgroundImage:  NetworkImage(image!),
                     ),
                     onTap: widget.onMenuTap,
                   ),
