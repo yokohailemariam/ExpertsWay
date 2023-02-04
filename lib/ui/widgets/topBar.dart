@@ -1,16 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:learncoding/models/user.dart';
-import 'package:learncoding/models/course.dart';
-import 'package:learncoding/services/api_controller.dart';
-import 'package:learncoding/theme/box_icons_icons.dart';
-import 'package:learncoding/ui/pages/course_detail.dart';
-import 'package:learncoding/ui/widgets/card.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' as material;
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:learncoding/ui/widgets/course_card.dart';
+import 'package:learncoding/utils/color.dart';
+import 'package:learncoding/utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../db/course_database.dart';
+import '../../models/course.dart';
+import 'package:flutter/material.dart' as material;
 
-import '../../api/shared_preference/shared_preference.dart';
+import '../../services/api_controller.dart';
+import '../../theme/box_icons_icons.dart';
 
 String? name;
 String? image;
@@ -22,21 +22,31 @@ class TopBar extends StatefulWidget {
     required this.expanded,
     required this.onMenuTap,
   }) : super(key: key);
-
   final TextEditingController controller;
   final bool expanded;
   final onMenuTap;
-
   @override
   _TopBarState createState() => _TopBarState();
 }
 
 class _TopBarState extends State<TopBar> {
   int tab = 0;
+  late List<CourseElement> course = [];
+  late List<Section> section = [];
+  bool isLoading = false;
+  
+
+  @override
+  void dispose() {
+    CourseDatabase.instance.close();
+    super.dispose();
+  }
+
   @override
   void initState() {
-    super.initState();
+    refreshCourse();
     getValue();
+    super.initState();
   }
 
   getValue() async {
@@ -44,6 +54,13 @@ class _TopBarState extends State<TopBar> {
     //Return double
     name = prefs.getString('name');
     image = prefs.getString('image');
+  }
+
+  Future refreshCourse() async {
+    setState(() => isLoading = true);
+
+    course = await CourseDatabase.instance.readAllCourse();
+    setState(() => isLoading = false);
   }
 
   @override
@@ -78,7 +95,7 @@ class _TopBarState extends State<TopBar> {
                   padding: const EdgeInsets.symmetric(horizontal: 15),
                   child: GestureDetector(
                     child: material.CircleAvatar(
-                      backgroundImage: NetworkImage(image!),
+                      backgroundImage:  NetworkImage(image!),
                     ),
                     onTap: widget.onMenuTap,
                   ),
@@ -131,82 +148,64 @@ class _TopBarState extends State<TopBar> {
               ? Container(
                   width: MediaQuery.of(context).size.width,
                   height: MediaQuery.of(context).size.height * 0.165,
-                  child: FutureBuilder<Course>(
-                      future: ApiProvider().retrieveCourses(),
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData) {
-                          return ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: snapshot.data!.courses.length,
-                              itemBuilder: (context, index) {
-                                final courseData =
-                                    snapshot.data!.courses[index];
-                                return Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(15, 15, 10, 30),
-                                  child: CardWidget(
-                                    gradient: false,
-                                    button: true,
-                                    duration: 200,
-                                    border: tab == index
-                                        ? Border(
-                                            bottom: BorderSide(
-                                                color: colorConvert(
-                                                    courseData.color),
-                                                width: 5),
-                                          )
-                                        : null,
-                                    child: Center(
-                                      child: Column(
-                                        mainAxisAlignment: material
-                                            .MainAxisAlignment.spaceEvenly,
-                                        children: <Widget>[
-                                          SizedBox(
-                                              width: 30,
-                                              height: 30,
-                                              child: Image.network(
-                                                  courseData.icon)),
-                                          Text(courseData.name)
-                                        ],
-                                      ),
-                                    ),
-                                    func: () {
-                                      setState(() {
-                                        tab = index;
-                                        Navigator.push(
-                                          context,
-                                          CupertinoPageRoute(
-                                            builder: (context) =>
-                                                CourseDetailPage(
-                                              courseData: courseData,
-                                            ),
-                                          ),
-                                        );
-                                      });
-                                    },
+                  child: course.isEmpty
+                      ? FutureBuilder<Course>(
+                          future: ApiProvider().retrieveCourses(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              {
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    color: maincolor,
                                   ),
                                 );
-                              });
-                        } else {
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        }
-                      }),
-                )
+                              }
+                            }
+                            if (snapshot.data!.courses.isEmpty) {
+                              return const Center(
+                                  child: Text(
+                                "There is no Course",
+                                style: TextStyle(
+                                    color: Color.fromARGB(184, 138, 138, 138)),
+                              ));
+                            }
+                            if (snapshot.hasError) {
+                              return const Center(
+                                  child: Text(
+                                "Unabel to get the data",
+                                style: TextStyle(
+                                    color: Color.fromARGB(184, 138, 138, 138)),
+                              ));
+                            }
+                            if (snapshot.hasData) {
+                              for (var i = 0;
+                                  i < snapshot.data!.courses.length;
+                                  i++) {
+                                final courseData = snapshot.data!.courses[i];
+                                CourseDatabase.instance
+                                    .createCourses(courseData);
+                              }
+                            }
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              refreshCourse();
+                            });
+                            return Container();
+                          })
+                      : buildCard())
               : Container(),
         ],
       ),
     );
   }
 
-  Color colorConvert(String color) {
-    color = color.replaceAll("#", "");
-    if (color.length == 6) {
-      return Color(int.parse("0xFF$color"));
-    } else if (color.length == 8) {
-      return Color(int.parse("0x$color"));
-    } else {
-      return const Color.fromARGB(0, 247, 86, 0);
-    }
+  Widget buildCard() {
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: course.length,
+      itemBuilder: (context, index) {
+        return CourseCard(courses: course[index], index: index);
+      },
+    );
   }
 }
