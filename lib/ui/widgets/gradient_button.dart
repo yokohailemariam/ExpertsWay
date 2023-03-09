@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 // ignore: must_be_immutable
@@ -24,7 +25,6 @@ class GradientBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(100),
       onTap: onPressed,
       child: Container(
         height: height,
@@ -33,9 +33,8 @@ class GradientBtn extends StatelessWidget {
           boxShadow: [
             BoxShadow(
                 color: Colors.grey.shade200,
-                spreadRadius: 1,
-                blurRadius: 6,
-                offset: const Offset(2, 8))
+                blurRadius: 10,
+                offset: const Offset(4, 8))
           ],
           color: isPcked ? Colors.white : null,
           gradient: isPcked
@@ -44,30 +43,33 @@ class GradientBtn extends StatelessWidget {
                   colors: [Color(0xff2686FF), Color(0xff26B0FF)]),
           borderRadius: BorderRadius.circular(100),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (!defaultBtn)
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Image.network(
-                  iconUrl,
-                  height: 32,
-                  width: 32,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (!defaultBtn)
+                Padding(
+                  padding: const EdgeInsets.all(6.0),
+                  child: CachedNetworkImage(
+                    imageUrl: iconUrl,
+                    height: 32,
+                    width: 32,
+                  ),
+                ),
+              Text(
+                btnName,
+                style: TextStyle(
+                  color: onPressed == null
+                      ? Colors.grey
+                      : isPcked
+                          ? Colors.black
+                          : Colors.white,
+                  fontSize: defaultBtn ? 18 : null,
                 ),
               ),
-            Text(
-              btnName,
-              style: TextStyle(
-                color: onPressed == null
-                    ? Colors.grey
-                    : isPcked
-                        ? Colors.black
-                        : Colors.white,
-                fontSize: defaultBtn ? 18 : null,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
