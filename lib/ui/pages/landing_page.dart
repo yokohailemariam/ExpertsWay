@@ -6,14 +6,14 @@ import 'package:learncoding/models/landing_page_list_model.dart';
 import 'package:learncoding/models/programming_options_model.dart';
 import 'package:learncoding/ui/widgets/gradient_button.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class LandingPage extends StatefulWidget {
+  const LandingPage({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<LandingPage> createState() => _LandingPageState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _LandingPageState extends State<LandingPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
